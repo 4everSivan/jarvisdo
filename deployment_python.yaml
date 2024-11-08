@@ -12,18 +12,18 @@
   roles:
     - common
 
-- name: Run python playbook {{ ansible_run_tags }}
+- name: run python playbook {{ ansible_run_tags }}
   hosts:
     - python
   tasks:
-    - name: Install
+    - name: install python
       include_tasks: roles/python/tasks/install.yaml
       tags: install
 
-    - name: Update
+    - name: update python
       include_tasks: roles/python/tasks/update.yaml
       tags: update
 
-    - name: Remove
+    - name: remove python
       include_tasks: roles/python/tasks/remove.yaml
       tags: remove

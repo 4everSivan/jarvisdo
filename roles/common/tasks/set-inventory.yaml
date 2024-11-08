@@ -9,6 +9,7 @@
     ansible_ssh_user: "{{ item.ssh_user }}"
     ansible_ssh_pass: "{{ item.ssh_pass }}"
     ansible_python_interpreter: /usr/bin/python
+    package_manager: "{{ item.system_version is version('8.0', '>=') and 'dnf' or 'yum' }}"
     soft_path: "{{ python.soft_path }}/python-{{ python.version }}"
     bin_path: "{{ python.install_path }}/{{ python.version }}"
   loop: "{{ system_info.nodes }}"

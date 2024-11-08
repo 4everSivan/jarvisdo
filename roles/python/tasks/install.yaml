@@ -3,26 +3,36 @@
   stat:
     path: "{{ python.install_path }}/{{ python.version }}/bin/python{{ python.version }}"
   register: python_file
+  tags:
+    - install
 
 - name: check {{ python.install_path }}/{{ python.version }}/bin/pip{{ python.version }} if exists
   stat:
     path: "{{ python.install_path }}/{{ python.version }}/bin/pip{{ python.version }}"
   register: pip_file
+  tags:
+    - install
 
-- name: install system dependency
+# Automatically identify used package management tools based on system version
+- name: set package management
+  set_fact:
+    package_manager: "{{ hostvars[inventory_hostname]['package_manager'] }}"
+  tags:
+    - install
+
+- name: install system dependencies
   ignore_errors: yes
-  yum:
+  package:
     name: "{{ item }}"
     state: present
-    use_backend: yum
+    use: "{{ package_manager }}"
   with_items:
     - gcc
     - openssl-devel
     - bzip2-devel
     - libffi-devel
-  when:
-    - inventory_hostname in groups["python"]|default([])
-    - python_file.stat.exists is false
+  tags:
+    - install
 
 - name: create directory
   file:
@@ -36,3 +46,98 @@
   when:
     - inventory_hostname in groups["python"]|default([])
     - python_file.stat.exists is false
+  tags:
+    - install
+
+- name: unarchive {{ python.package }}
+  unarchive:
+    src: "{{ python.package }}"
+    dest: "{{ python.soft_path }}/python-{{ python.version }}"
+    extra_opts: "--strip-components=1"
+  when:
+    - inventory_hostname in groups["python"]|default([])
+    - python_file.stat.exists is false
+  tags:
+    - install
+
+- name: compile python-{{ python.version }}
+  become: yes
+  become_method: su
+  become_flags: '-'
+  command: "{{ item }}"
+  args:
+    chdir: "{{ python.soft_path }}/python-{{ python.version }}"
+  with_items:
+    - ./configure --prefix={{ python.install_path }}/{{ python.version }} --enable-optimizations --enable-shared
+    - make altinstall
+  when:
+    - inventory_hostname in groups["python"]|default([])
+    - python_file.stat.exists is false
+  tags:
+    - install
+
+- name: create python3 link
+  file:
+    src: "{{ python.install_path }}/{{ python.version }}/bin/python{{ python.version }}"
+    dest: /usr/bin/python3
+    state: link
+  when:
+    - inventory_hostname in groups["python"]|default([])
+    - python_file.stat.exists is false
+  tags:
+    - install
+
+- name: create pip3 link
+  file:
+    src: "{{ python.install_path }}/{{ python.version }}/bin/pip{{ python.version }}"
+    dest: /usr/bin/pip3
+    state: link
+  when:
+    - inventory_hostname in groups["python"]|default([])
+    - python_file.stat.exists is false
+  tags:
+    - install
+
+- name: copy libpython3.so and libpython3.9.so.1.0 to /usr/lib64
+  copy:
+    src: "{{ python.install_path }}/{{ python.version }}/lib/{{ item }}"
+    dest: /usr/lib64/
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: yes
+  with_items:
+    - libpython3.so
+    - libpython3.9.so.1.0
+  tags:
+    - install
+
+- name: check libpython3.9.so.1.0 if exists
+  stat:
+    path: /usr/lib64/libpython3.9.so.1.0
+  register: libpython_file
+  tags:
+    - install
+
+- name: create libpython3.9.so link
+  file:
+    src: libpython3.9.so.1.0
+    dest: /usr/lib64/libpython3.9.so
+    owner: root
+    group: root
+    state: link
+  when: libpython_file.stat.exists
+  tags:
+    - install
+
+#- name: Pip install package
+#  pip:
+#    name:
+#      - Jinja2
+#      - psutil
+#      - psycopg2-binary
+#      - passlib
+#      - kazoo
+#    extra_args: -i https://mirrors.aliyun.com/pypi/simple/  --trusted-host mirrors.aliyun.com
+#    executable: /usr/bin/pip3
+#  when: inventory_hostname in groups["python"]|default([])

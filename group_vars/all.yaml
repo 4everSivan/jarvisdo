@@ -1,8 +1,8 @@
 system_info:
   nodes:
-    - host: 192.168.0.1
+    - host: 192.168.100.51
       ssh_user: 'root'
-      ssh_pass: 'password'
+      ssh_pass: 'linux123!@#'
       system_version: 8.5
       system_arch: x86_64
 
