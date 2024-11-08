@@ -1,0 +1,38 @@
+---
+- name: check {{ python.install_path }}/{{ python.version }}/bin/python{{ python.version }} if exists
+  stat:
+    path: "{{ python.install_path }}/{{ python.version }}/bin/python{{ python.version }}"
+  register: python_file
+
+- name: check {{ python.install_path }}/{{ python.version }}/bin/pip{{ python.version }} if exists
+  stat:
+    path: "{{ python.install_path }}/{{ python.version }}/bin/pip{{ python.version }}"
+  register: pip_file
+
+- name: install system dependency
+  ignore_errors: yes
+  yum:
+    name: "{{ item }}"
+    state: present
+    use_backend: yum
+  with_items:
+    - gcc
+    - openssl-devel
+    - bzip2-devel
+    - libffi-devel
+  when:
+    - inventory_hostname in groups["python"]|default([])
+    - python_file.stat.exists is false
+
+- name: create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+  with_items:
+    - "{{ python.soft_path }}/python-{{ python.version }}"
+    - "{{ python.install_path }}/{{ python.version }}"
+  when:
+    - inventory_hostname in groups["python"]|default([])
+    - python_file.stat.exists is false

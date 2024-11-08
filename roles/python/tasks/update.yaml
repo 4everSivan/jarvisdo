@@ -1,0 +1,4 @@
+---
+- name: run update
+  debug:
+    msg: "do update"

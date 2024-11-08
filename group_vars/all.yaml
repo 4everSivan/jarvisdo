@@ -1,0 +1,13 @@
+system_info:
+  nodes:
+    - host: 192.168.0.1
+      ssh_user: 'root'
+      ssh_pass: 'password'
+      system_version: 8.5
+      system_arch: x86_64
+
+python:
+  package: Python-3.9.16.tgz
+  version: 3.9
+  soft_path: /opt/soft
+  install_path: /usr/local/python

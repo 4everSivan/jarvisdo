@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+  pre_tasks:
+    - name: Check whether a tag is specified
+      fail:
+        msg: "No tags were provided. Please set `--tags` such as 'install', 'update', or 'remove'."
+      when: ansible_run_tags == ['all']
+  tags:
+    - install
+    - update
+    - remove
+  roles:
+    - common
+
+- name: Run python playbook {{ ansible_run_tags }}
+  hosts:
+    - python
+  tasks:
+    - name: Install
+      include_tasks: roles/python/tasks/install.yaml
+      tags: install
+
+    - name: Update
+      include_tasks: roles/python/tasks/update.yaml
+      tags: update
+
+    - name: Remove
+      include_tasks: roles/python/tasks/remove.yaml
+      tags: remove

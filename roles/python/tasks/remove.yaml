@@ -1,0 +1,4 @@
+---
+- name: run remove
+  debug:
+    msg: "do remove"
